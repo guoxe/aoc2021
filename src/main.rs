@@ -32,7 +32,44 @@ fn day1_pt2() -> u32 {
     count
 }
 
+fn day2_pt1() -> u32 {
+    let contents = fs::read_to_string("input_day2.txt").expect("Can't read");
+    let mut start_pos = (0, 0);
+    for line in contents.lines() {
+        let (command, value) = line.split_at(line.find(" ").unwrap());
+        let value = value.trim().parse::<u32>().unwrap();
+        match command {
+            "forward" => start_pos.0 += value,
+            "down" => start_pos.1 += value,
+            "up" => start_pos.1 -= value,
+            _ => (),
+        }
+    }
+    start_pos.0 * start_pos.1
+}
+
+fn day2_pt2() -> u32 {
+    let contents = fs::read_to_string("input_day2.txt").expect("Can't read");
+    let (mut longitude, mut latitude, mut aim) = (0, 0, 0);
+    for line in contents.lines() {
+        let (command, value) = line.split_at(line.find(" ").unwrap());
+        let value = value.trim().parse::<u32>().unwrap();
+        match command {
+            "forward" => {
+                longitude += value;
+                latitude += aim * value;
+            }
+            "down" => aim += value,
+            "up" => aim -= value,
+            _ => (),
+        }
+    }
+    longitude * latitude
+}
+
 fn main() {
-    println!("Day1 problem {}", day1());
-    println!("Day 2 problem {}", day1_pt2());
+    //println!("Day1 problem {}", day1());
+    //println!("Day 2 problem {}", day1_pt2());
+    println!("{}", day2_pt1());
+    println!("{}", day2_pt2());
 }
