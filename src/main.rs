@@ -214,9 +214,19 @@ impl Entry {
 #[derive(Debug)]
 struct Board {
     data: Vec<Vec<Entry>>,
+    won_at: Option<usize>,
+    winning_score: Option<u32>,
 }
 
 impl Board {
+    fn from_data(b: Vec<Vec<Entry>>) -> Board {
+        Board {
+            data: b,
+            won_at: None,
+            winning_score: None,
+        }
+    }
+
     fn mark(&mut self, i: u32) {
         for row in self.data.iter_mut() {
             for entry in row.iter_mut() {
@@ -260,6 +270,16 @@ impl Board {
             .sum::<u32>()
             * last_draw
     }
+
+    fn record_win(&mut self, draw: u32, round: usize) {
+        match self.won_at {
+            Some(_) => (),
+            None => {
+                self.won_at = Some(round);
+                self.winning_score = Some(self.score(draw))
+            }
+        }
+    }
 }
 
 fn day4_pt1() -> u32 {
@@ -287,7 +307,7 @@ fn day4_pt1() -> u32 {
                 })
                 .collect()
         })
-        .map(|b| Board { data: b })
+        .map(|b| Board::from_data(b))
         .collect();
 
     for i in draw_numbers {
@@ -301,6 +321,53 @@ fn day4_pt1() -> u32 {
     0
 }
 
+fn day4_pt2() -> u32 {
+    let input = fs::read_to_string("input_day4.txt").expect("failed to read");
+    let mut lines = input.lines();
+    let draw_numbers: Vec<u32> = lines
+        .next()
+        .unwrap()
+        .split(",")
+        .map(|i| i.parse::<u32>().unwrap())
+        .collect();
+    let filtered_input: Vec<&str> = lines.filter(|l| l.len() > 0).collect();
+    let mut boards: Vec<Board> = filtered_input
+        .as_slice()
+        .chunks_exact(5)
+        .map(|board| {
+            board
+                .iter()
+                .map(|l| {
+                    l.split(" ")
+                        .map(|i| i.replace(" ", ""))
+                        .filter(|i| !i.is_empty())
+                        .map(|i| Entry::from_number(i.parse::<u32>().unwrap()))
+                        .collect()
+                })
+                .collect()
+        })
+        .map(|b| Board::from_data(b))
+        .collect();
+
+    for (round, &number) in draw_numbers.iter().enumerate() {
+        for board in boards.iter_mut() {
+            board.mark(number);
+            if board.is_winning() {
+                if board.score(number) > 0 {
+                    board.record_win(number, round);
+                }
+            }
+        }
+    }
+    match boards.iter().max_by_key(|b| match b.won_at {
+        Some(i) => i,
+        None => 0,
+    }) {
+        Some(b) => b.winning_score.unwrap(),
+        None => 0,
+    }
+}
+
 fn main() {
     //println!("Day1 problem {}", day1());
     //println!("Day 2 problem {}", day1_pt2());
@@ -309,4 +376,5 @@ fn main() {
     //println!("pt1: {}", day3_pt1());
     //println!("pt2: {}", day3_pt2());
     println!("pt1: {}", day4_pt1());
+    println!("pt2: {}", day4_pt2());
 }
