@@ -193,11 +193,120 @@ fn day3_pt2() -> u32 {
     oxy * co2r
 }
 
+#[derive(Debug)]
+struct Entry {
+    number: u32,
+    drawn: bool,
+}
+
+impl Entry {
+    fn from_number(i: u32) -> Entry {
+        Entry {
+            number: i,
+            drawn: false,
+        }
+    }
+    fn mark(&mut self) {
+        self.drawn = true;
+    }
+}
+
+#[derive(Debug)]
+struct Board {
+    data: Vec<Vec<Entry>>,
+}
+
+impl Board {
+    fn mark(&mut self, i: u32) {
+        for row in self.data.iter_mut() {
+            for entry in row.iter_mut() {
+                if entry.number == i {
+                    entry.mark();
+                }
+            }
+        }
+    }
+
+    fn _check_row(&self, row_idx: usize) -> bool {
+        self.data[row_idx].iter().map(|e| e.drawn as u8).sum::<u8>() == 5
+    }
+
+    fn _check_col(&self, col_idx: usize) -> bool {
+        self.data
+            .iter()
+            .map(|col| &col[col_idx])
+            .map(|e| e.drawn as u8)
+            .sum::<u8>()
+            == 5
+    }
+    fn is_winning(&self) -> bool {
+        for i in 0..4 {
+            if self._check_row(i) || self._check_col(i) {
+                return true;
+            }
+        }
+        false
+    }
+
+    fn score(&self, last_draw: u32) -> u32 {
+        self.data
+            .iter()
+            .map(|row| {
+                row.iter()
+                    .filter(|e| !e.drawn)
+                    .map(|e| e.number)
+                    .sum::<u32>()
+            })
+            .sum::<u32>()
+            * last_draw
+    }
+}
+
+fn day4_pt1() -> u32 {
+    let input = fs::read_to_string("input_day4.txt").expect("failed to read");
+    let mut lines = input.lines();
+    let draw_numbers: Vec<u32> = lines
+        .next()
+        .unwrap()
+        .split(",")
+        .map(|i| i.parse::<u32>().unwrap())
+        .collect();
+    let filtered_input: Vec<&str> = lines.filter(|l| l.len() > 0).collect();
+    let mut boards: Vec<Board> = filtered_input
+        .as_slice()
+        .chunks_exact(5)
+        .map(|board| {
+            board
+                .iter()
+                .map(|l| {
+                    l.split(" ")
+                        .map(|i| i.replace(" ", ""))
+                        .filter(|i| !i.is_empty())
+                        .map(|i| Entry::from_number(i.parse::<u32>().unwrap()))
+                        .collect()
+                })
+                .collect()
+        })
+        .map(|b| Board { data: b })
+        .collect();
+
+    for i in draw_numbers {
+        for board in boards.iter_mut() {
+            board.mark(i);
+            if board.is_winning() {
+                return board.score(i);
+            }
+        }
+    }
+    0
+}
+
 fn main() {
     //println!("Day1 problem {}", day1());
     //println!("Day 2 problem {}", day1_pt2());
     //println!("{}", day2_pt1());
     //println!("{}", day2_pt2());
-    println!("pt1: {}", day3_pt1());
-    println!("pt2: {}", day3_pt2());
+    //println!("pt1: {}", day3_pt1());
+    //println!("pt2: {}", day3_pt2());
+    println!("pt1: {}", day4_pt1());
 }
