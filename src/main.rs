@@ -1,3 +1,4 @@
+use std::cmp;
 use std::collections::HashMap;
 use std::fs;
 
@@ -368,6 +369,121 @@ fn day4_pt2() -> u32 {
     }
 }
 
+#[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Clone)]
+struct Point {
+    x: u32,
+    y: u32,
+}
+
+impl Point {
+    fn from_str(input: &str) -> Point {
+        let coords: Vec<u32> = input
+            .split(",")
+            .map(|i| i.parse::<u32>().unwrap())
+            .collect();
+        Point {
+            x: coords[0],
+            y: coords[1],
+        }
+    }
+}
+
+#[derive(Debug)]
+struct Line {
+    start: Point,
+    end: Point,
+}
+
+impl Line {
+    fn intersect(&self, p: &Point) -> bool {
+        p.x >= self.start.x && p.x <= self.end.x && p.y >= self.start.y && p.y <= self.end.y
+    }
+
+    fn max(&self) -> Point {
+        Point {
+            x: cmp::max(self.start.x, self.end.x),
+            y: cmp::max(self.start.y, self.end.y),
+        }
+    }
+    fn min(&self) -> Point {
+        Point {
+            x: cmp::min(self.start.x, self.end.x),
+            y: cmp::min(self.start.y, self.end.y),
+        }
+    }
+}
+
+fn parse_day5(input: &str) -> Vec<Line> {
+    let mut lines: Vec<Line> = Vec::new();
+    for line in input.lines() {
+        let mut line: Vec<Point> = line
+            .trim()
+            .split(" -> ")
+            .map(|p| Point::from_str(p))
+            .collect();
+        if line.len() != 2 {
+            continue;
+        }
+        let start = line.remove(0);
+        let end = line.remove(0);
+        lines.push(Line { start, end });
+    }
+    lines
+}
+
+fn get_extent(lines: &Vec<Line>) -> (Point, Point) {
+    let mut min = Point {
+        x: u32::MAX,
+        y: u32::MAX,
+    };
+    let mut max = Point { x: 0, y: 0 };
+    for line in lines {
+        min.x = cmp::min(line.min().x, min.x);
+        min.y = cmp::min(line.min().y, min.y);
+        max.x = cmp::max(line.max().x, max.x);
+        max.y = cmp::max(line.max().y, max.y);
+    }
+    (min, max)
+}
+
+fn day5_small() -> usize {
+    let input = "0,9 -> 5,9
+    8,0 -> 0,8
+    9,4 -> 3,4
+    2,2 -> 2,1
+    7,0 -> 7,4
+    6,4 -> 2,0
+    0,9 -> 2,9
+    3,4 -> 1,4
+    0,0 -> 8,8
+    5,5 -> 8,2";
+    let lines = parse_day5(input);
+    let (min, max) = get_extent(&lines);
+    let lines: Vec<Line> = lines
+        .into_iter()
+        .filter(|l| l.start.x == l.end.x || l.start.y == l.end.y)
+        .collect();
+    let mut counts: HashMap<Point, usize> = HashMap::new();
+    for y in min.y..max.y + 1 {
+        for x in min.x..max.x + 1 {
+            let candidate = Point { x, y };
+            for line in &lines {
+                if line.intersect(&candidate) {
+                    println!("{:?} intersected with {:?}", candidate, line);
+                    *counts.entry(candidate.clone()).or_insert(0) += 1;
+                }
+            }
+        }
+    }
+    let positions = counts
+        .iter()
+        .filter(|p| p.1 >= &2)
+        .map(|p| p.0)
+        .collect::<Vec<&Point>>();
+    println!("{:?}", counts);
+    positions.len()
+}
+
 fn main() {
     //println!("Day1 problem {}", day1());
     //println!("Day 2 problem {}", day1_pt2());
@@ -375,6 +491,7 @@ fn main() {
     //println!("{}", day2_pt2());
     //println!("pt1: {}", day3_pt1());
     //println!("pt2: {}", day3_pt2());
-    println!("pt1: {}", day4_pt1());
-    println!("pt2: {}", day4_pt2());
+    //println!("pt1: {}", day4_pt1());
+    //println!("pt2: {}", day4_pt2());
+    println!("pt1: {}", day5_small());
 }
