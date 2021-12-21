@@ -371,15 +371,15 @@ fn day4_pt2() -> u32 {
 
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Clone)]
 struct Point {
-    x: u32,
-    y: u32,
+    x: i32,
+    y: i32,
 }
 
 impl Point {
     fn from_str(input: &str) -> Point {
-        let coords: Vec<u32> = input
+        let coords: Vec<i32> = input
             .split(",")
-            .map(|i| i.parse::<u32>().unwrap())
+            .map(|i| i.parse::<i32>().unwrap())
             .collect();
         Point {
             x: coords[0],
@@ -396,7 +396,34 @@ struct Line {
 
 impl Line {
     fn intersect(&self, p: &Point) -> bool {
-        p.x >= self.start.x && p.x <= self.end.x && p.y >= self.start.y && p.y <= self.end.y
+        if self.start.x == self.end.x || self.start.y == self.end.y {
+            return p.x >= self.start.x
+                && p.x <= self.end.x
+                && p.y >= self.start.y
+                && p.y <= self.end.y;
+        } else {
+            let cross = |a: &Point, b: &Point| a.x * b.y - a.y * b.x;
+            let dot = |a: &Point, b: &Point| a.x * b.x + a.y * b.y;
+            // cba operator overloads :(
+            let candidate = Point {
+                x: p.x - self.start.x,
+                y: p.y - self.start.y,
+            };
+            let line = Point {
+                x: self.end.x - self.start.x,
+                y: self.end.y - self.start.y,
+            };
+            if cross(&candidate, &line) == 0 {
+                if dot(&candidate, &line) == 0 {
+                    return true;
+                } else if dot(&candidate, &line) == dot(&line, &line) {
+                    return true;
+                } else if dot(&candidate, &line) > 0 && dot(&line, &line) > dot(&candidate, &line) {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 
     fn max(&self) -> Point {
@@ -434,8 +461,8 @@ fn parse_day5(input: &str) -> Vec<Line> {
 
 fn get_extent(lines: &Vec<Line>) -> (Point, Point) {
     let mut min = Point {
-        x: u32::MAX,
-        y: u32::MAX,
+        x: i32::MAX,
+        y: i32::MAX,
     };
     let mut max = Point { x: 0, y: 0 };
     for line in lines {
@@ -448,15 +475,11 @@ fn get_extent(lines: &Vec<Line>) -> (Point, Point) {
 }
 
 fn day5_solve(lines: &Vec<Line>, min: &Point, max: &Point) -> usize {
-    let lines: Vec<&Line> = lines
-        .iter()
-        .filter(|l| l.start.x == l.end.x || l.start.y == l.end.y)
-        .collect();
     let mut counts: HashMap<Point, usize> = HashMap::new();
     for y in min.y..max.y + 1 {
         for x in min.x..max.x + 1 {
             let candidate = Point { x, y };
-            for line in &lines {
+            for line in lines {
                 if line.intersect(&candidate) {
                     *counts.entry(candidate.clone()).or_insert(0) += 1;
                 }
@@ -471,7 +494,27 @@ fn day5_solve(lines: &Vec<Line>, min: &Point, max: &Point) -> usize {
     positions.len()
 }
 
-fn day5_small() -> usize {
+fn day5_small_pt1() -> usize {
+    let input = "0,9 -> 5,9
+    8,0 -> 0,8
+    9,4 -> 3,4
+    2,2 -> 2,1
+    7,0 -> 7,4
+    6,4 -> 2,0
+    0,9 -> 2,9
+    3,4 -> 1,4
+    0,0 -> 8,8
+    5,5 -> 8,2";
+    let lines = parse_day5(input);
+    let (min, max) = get_extent(&lines);
+    let lines: Vec<Line> = lines
+        .into_iter()
+        .filter(|l| l.start.x == l.end.x || l.start.y == l.end.y)
+        .collect();
+    day5_solve(&lines, &min, &max)
+}
+
+fn day5_small_pt2() -> usize {
     let input = "0,9 -> 5,9
     8,0 -> 0,8
     9,4 -> 3,4
@@ -490,6 +533,17 @@ fn day5_small() -> usize {
 fn day5_pt1() -> usize {
     let input = fs::read_to_string("input_day5.txt").expect("Can't read");
     let lines = parse_day5(&input);
+    let lines: Vec<Line> = lines
+        .into_iter()
+        .filter(|l| l.start.x == l.end.x || l.start.y == l.end.y)
+        .collect();
+    let (min, max) = get_extent(&lines);
+    day5_solve(&lines, &min, &max)
+}
+
+fn day5_pt2() -> usize {
+    let input = fs::read_to_string("input_day5.txt").expect("Can't read");
+    let lines = parse_day5(&input);
     let (min, max) = get_extent(&lines);
     day5_solve(&lines, &min, &max)
 }
@@ -503,5 +557,7 @@ fn main() {
     //println!("pt2: {}", day3_pt2());
     //println!("pt1: {}", day4_pt1());
     //println!("pt2: {}", day4_pt2());
+    //println!("pt1: {}", day5_pt1());
     println!("pt1: {}", day5_pt1());
+    println!("pt2: {}", day5_pt2());
 }
