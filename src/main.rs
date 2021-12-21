@@ -424,6 +424,7 @@ fn parse_day5(input: &str) -> Vec<Line> {
         if line.len() != 2 {
             continue;
         }
+        line.sort();
         let start = line.remove(0);
         let end = line.remove(0);
         lines.push(Line { start, end });
@@ -446,6 +447,30 @@ fn get_extent(lines: &Vec<Line>) -> (Point, Point) {
     (min, max)
 }
 
+fn day5_solve(lines: &Vec<Line>, min: &Point, max: &Point) -> usize {
+    let lines: Vec<&Line> = lines
+        .iter()
+        .filter(|l| l.start.x == l.end.x || l.start.y == l.end.y)
+        .collect();
+    let mut counts: HashMap<Point, usize> = HashMap::new();
+    for y in min.y..max.y + 1 {
+        for x in min.x..max.x + 1 {
+            let candidate = Point { x, y };
+            for line in &lines {
+                if line.intersect(&candidate) {
+                    *counts.entry(candidate.clone()).or_insert(0) += 1;
+                }
+            }
+        }
+    }
+    let positions = counts
+        .iter()
+        .filter(|p| p.1 >= &2)
+        .map(|p| p.0)
+        .collect::<Vec<&Point>>();
+    positions.len()
+}
+
 fn day5_small() -> usize {
     let input = "0,9 -> 5,9
     8,0 -> 0,8
@@ -459,29 +484,14 @@ fn day5_small() -> usize {
     5,5 -> 8,2";
     let lines = parse_day5(input);
     let (min, max) = get_extent(&lines);
-    let lines: Vec<Line> = lines
-        .into_iter()
-        .filter(|l| l.start.x == l.end.x || l.start.y == l.end.y)
-        .collect();
-    let mut counts: HashMap<Point, usize> = HashMap::new();
-    for y in min.y..max.y + 1 {
-        for x in min.x..max.x + 1 {
-            let candidate = Point { x, y };
-            for line in &lines {
-                if line.intersect(&candidate) {
-                    println!("{:?} intersected with {:?}", candidate, line);
-                    *counts.entry(candidate.clone()).or_insert(0) += 1;
-                }
-            }
-        }
-    }
-    let positions = counts
-        .iter()
-        .filter(|p| p.1 >= &2)
-        .map(|p| p.0)
-        .collect::<Vec<&Point>>();
-    println!("{:?}", counts);
-    positions.len()
+    day5_solve(&lines, &min, &max)
+}
+
+fn day5_pt1() -> usize {
+    let input = fs::read_to_string("input_day5.txt").expect("Can't read");
+    let lines = parse_day5(&input);
+    let (min, max) = get_extent(&lines);
+    day5_solve(&lines, &min, &max)
 }
 
 fn main() {
@@ -493,5 +503,5 @@ fn main() {
     //println!("pt2: {}", day3_pt2());
     //println!("pt1: {}", day4_pt1());
     //println!("pt2: {}", day4_pt2());
-    println!("pt1: {}", day5_small());
+    println!("pt1: {}", day5_pt1());
 }
