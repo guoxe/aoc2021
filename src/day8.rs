@@ -6,18 +6,12 @@ enum Segments {
 }
 
 fn count_output_digits_unique_segments(input: &str) -> usize {
-    let unique_digit = |len| match len {
-        2 => true,
-        3 => true,
-        4 => true,
-        7 => true,
-        _ => false,
-    };
-    let count_uniques_in_output = |o: &str| o.split(" ").filter(|d| unique_digit(d.len())).count();
+    let unique_digit = |len| matches!(len, 2 | 3 | 4 | 7);
+    let count_uniques_in_output = |o: &str| o.split(' ').filter(|d| unique_digit(d.len())).count();
     input
         .lines()
         .filter_map(|l| l.split(" | ").nth(1))
-        .map(|o| count_uniques_in_output(o))
+        .map(count_uniques_in_output)
         .sum()
 }
 
